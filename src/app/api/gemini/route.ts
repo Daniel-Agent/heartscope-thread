@@ -36,17 +36,23 @@ export async function POST(req: NextRequest) {
     console.log('[Gemini] 전체 응답:', JSON.stringify(data, null, 2));
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     console.log('[Gemini] 원본 응답:', text);
-    // 정규식으로 확률과 코멘트 추출
-    const match = text.match(/재회 확률[:：]\s*(\d+)%?\s*\n*([\s\S]*)/);
-    if (match) {
-      const probability = Number(match[1]);
-      const comment = match[2].trim();
-      console.log('[Gemini] 파싱 성공:', probability, comment);
-      return NextResponse.json({ probability, comment, raw: text });
-    } else {
-      console.log('[Gemini] 파싱 실패, 원본만 반환');
-      return NextResponse.json({ raw: text });
+    // 마크다운 코드블록에서 JSON 추출
+    const codeBlockMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
+    let jsonText = text;
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1];
     }
+    try {
+      const parsed = JSON.parse(jsonText);
+      if (typeof parsed.probability !== 'undefined' && typeof parsed.comment === 'string') {
+        console.log('[Gemini] JSON 파싱 성공:', parsed.probability, parsed.comment);
+        return NextResponse.json({ probability: parsed.probability, comment: parsed.comment, raw: text });
+      }
+    } catch (err) {
+      // 파싱 실패 시 아래로 진행
+    }
+    console.log('[Gemini] 파싱 실패, 원본만 반환');
+    return NextResponse.json({ raw: text });
   } catch (err) {
     console.log('[Gemini] API 호출 실패', err);
     return NextResponse.json({ error: 'Gemini API 호출 실패', detail: String(err) }, { status: 500 });
