@@ -28,7 +28,7 @@ export default function Home() {
       } else {
         setResult(data);
       }
-    } catch (e) {
+    } catch (_) {
       setError("서버 오류가 발생했습니다.");
     } finally {
       setLoading(false);
