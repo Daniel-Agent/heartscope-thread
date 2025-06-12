@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         console.log('[Gemini] JSON 파싱 성공:', parsed.probability, parsed.comment);
         return NextResponse.json({ probability: parsed.probability, comment: parsed.comment, raw: text });
       }
-    } catch (err) {
+    } catch {
       // 파싱 실패 시 아래로 진행
     }
     console.log('[Gemini] 파싱 실패, 원본만 반환');
